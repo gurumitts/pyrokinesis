@@ -1,16 +1,18 @@
-import sqlite3, json, random, time
+import sqlite3
+import json
+import random
+import time
+import logging
 
 
 class DataStore:
     def __init__(self, setup=False):
-        # print 'Preparing data store..'
-        self.connection = sqlite3.connect('app.sqlite3.db')
-        self.profile_connection = sqlite3.connect('profiles.db')
+        self.connection = sqlite3.connect('db/app.sqlite3.db')
+        self.profile_connection = sqlite3.connect('db/profiles.db')
         self.connection.row_factory = sqlite3.Row
         self.profile_connection.row_factory = sqlite3.Row
         if setup:
             self.setup()
-        # print 'data store is ready'
 
     def get_profiles(self):
         cursor = self.profile_connection.cursor()
@@ -58,6 +60,40 @@ class DataStore:
         self.profile_connection.commit()
         cursor.close()
 
+    def save_profile(self, settings):
+        params = []
+        params.extend([settings['name'], settings['target_temp'], settings['sample_size'],
+                       settings['tolerance'], settings['heat_duration'], settings['cool_duration'], settings['id']])
+
+        cursor = self.profile_connection.cursor()
+
+        cursor.execute("""update profiles set NAME = ?, TARGET_TEMP = ?,
+            SAMPLE_SIZE = ?, TOLERANCE = ?, heat_duration = ?, cool_duration = ? where id = ? ;""", params)
+        self.profile_connection.commit()
+        cursor.close()
+
+    def add_profile(self, settings):
+        params = []
+        params.extend([settings['name'], settings['target_temp'], settings['sample_size'],
+                       settings['tolerance'], settings['heat_duration'], settings['cool_duration']])
+
+        cursor = self.profile_connection.cursor()
+        cursor.execute("""insert into profiles (NAME, TARGET_TEMP, SAMPLE_SIZE,
+                TOLERANCE, COOL_DURATION, HEAT_DURATION )
+                values(?,?,?,?,?,?);""", params)
+
+        self.profile_connection.commit()
+        cursor.close()
+
+    def delete_profile(self, id):
+        params = [id]
+
+        cursor = self.profile_connection.cursor()
+        cursor.execute("""DELETE FROM profiles WHERE id = ? """, params)
+
+        self.profile_connection.commit()
+        cursor.close()
+
     def apply_active_profile(self):
         profile = self.get_active_profile()
         old_setting = self.get_settings()
@@ -97,7 +133,10 @@ class DataStore:
         settings = {}
         if r is not None:
             for key in r.keys():
-                settings[key.lower()] = r[key]
+                if key.lower() == 'enabled':
+                    settings[key.lower()] = 'true' if 1 == r[key] else 'false'
+                else:
+                    settings[key.lower()] = r[key]
             cursor.close()
         return settings
 
@@ -173,13 +212,12 @@ class DataStore:
             cursor.execute('select count(*) from temperatures')
             # print cursor.fetchone()
         except Exception as e:
-            print e.message
-            print 'Required table not found... creating temperatures table...'
+            logging.info('Required table not found... creating temperatures table...')
             cursor.execute("""create table temperatures(
                 ID INTEGER PRIMARY KEY   AUTOINCREMENT,
                 DT DATETIME DEFAULT CURRENT_TIMESTAMP,
                 TEMP REAL);""")
-            print 'done!'
+            logging.info('done!')
         finally:
             cursor.close()
 
@@ -188,8 +226,7 @@ class DataStore:
             cursor.execute('select count(*) from settings')
             cursor.fetchone()
         except Exception as e:
-            print e.message
-            print 'Required table not found... creating settings table...'
+            logging.info('Required table not found... creating settings table...')
             cursor.execute("""create table settings(
                 ID INTEGER PRIMARY KEY   AUTOINCREMENT,
                 ENABLED INTEGER,
@@ -203,7 +240,7 @@ class DataStore:
                 HEAT_SOURCE,SAMPLE_SIZE, TOLERANCE, COOL_DURATION, HEAT_DURATION )
                 values(?,?,?,?,?,?,?);""", ['0', '200', 'off', '20', '5', '30000', '30000'])
 
-            print 'done!'
+            logging.info('done!')
         finally:
             cursor.close()
 
@@ -211,8 +248,7 @@ class DataStore:
         try:
             profile_cursor.execute('select count(*) from profiles')
         except Exception as e:
-            print e.message
-            print 'Required table not found... creating profiles table...'
+            logging.info('Required table not found... creating profiles table...')
             profile_cursor.execute("""create table profiles(
                 ID INTEGER PRIMARY KEY   AUTOINCREMENT,
                 NAME TEXT,
@@ -221,12 +257,12 @@ class DataStore:
                 TOLERANCE REAL,
                 COOL_DURATION INTEGER,
                 HEAT_DURATION INTEGER);""")
-            print 'done!'
+            logging.info('done!')
 
-            print 'Required table not found... creating active_profile table...'
+            logging.info('Required table not found... creating active_profile table...')
             profile_cursor.execute("""create table active_profile(
                 ID INTEGER PRIMARY KEY   AUTOINCREMENT, ACTIVE INTEGER) ;""")
-            print 'done!'
+            logging.info('done!')
 
             self.profile_connection.commit()
 
@@ -251,26 +287,25 @@ class DataStore:
             self.apply_active_profile()
             self.connection.commit()
 
-            print 'done!'
+            logging.info('setup done!')
         finally:
             cursor.close()
             profile_cursor.close()
 
 
-
 if __name__ == '__main__':
-    db = DataStore()
+    db = DataStore(setup=True)
 
-    print db.get_settings()
-    print db.get_profiles()
-    print db.get_profile(1)
-    print db.get_profile(2)
-    print db.get_active_profile()
-    exit(1)
+    print(db.get_settings())
+    print(db.get_profiles())
+    print(db.get_profile(1))
+    print(db.get_profile(2))
+    print(db.get_active_profile())
+
 
     db.add_temperature(205 + 12 * random.random())
     db.add_temperature(205 + 12 * random.random())
-    #print db.get_control_data()
+    # print(db.get_control_data())
 
     count = 1
     while count < 20000:
@@ -278,8 +313,8 @@ if __name__ == '__main__':
         count += 1
         time.sleep(1)
         temps = json.loads(db.get_temps(count - 1))
-        print temps[len(temps) - 1]
-        print db.get_control_data()
+        print(temps[len(temps) - 1])
+        print(db.get_control_data())
 
-    print db.get_control_data()
-    print db.get_temps(7)
+    print(db.get_control_data())
+    print(db.get_temps(7))

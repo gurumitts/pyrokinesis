@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/static/bootstrap-switch.min.css"/>
+</head>
+<style>
+
+    h4 {
+    margin-top: 25px;
+    }
+    .row {
+    margin-bottom: 20px;
+    }
+    .row .row {
+    margin-top: 10px;
+    margin-bottom: 0;
+    }
+
+
+    hr {
+    margin-top: 40px;
+    margin-bottom: 40px;
+    }
+
+
+</style>
+<body>
+<div class="container">
+
+    <div class="page-header">
+        <h1>SmokeyPi-ab</h1>
+    </div>
+
+    <p class="lead">Temperature current: <span style="color: navy" id="currentTemp">78.78</span>,
+        Average: <span class="text-info" id="averageTemp">80</span>,
+        Target: <span class="text-danger" id="targetTemp">{{target_temp}}</span>
+        <br/> Heat source is <span id="heatSource">on</span></p>
+
+    <div class="row">
+
+        <div class="col-md-12">
+            <div id='chart'>
+                <canvas id="mycanvas" width="900" height="400"></canvas>
+            </div>
+        </div>
+    </div>
+    <p class="lead">
+
+        <input id="enabled" type="checkbox"
+               {% if enabled %}
+               checked
+               {% endif %}
+                />
+
+        <button class="btn btn-primary btn-xs" id="mod" data-toggle="modal" data-target="#myModal">
+            Settings
+        </button>
+        <button class="btn btn-primary btn-xs" id="autoRefresh">
+            Auto Refresh
+        </button>
+        <a href="/history" class="btn btn-primary btn-xs" role="button">History</a>
+    </p>
+
+    <div>
+
+        <!-- Modal -->
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span
+                                class="sr-only">Close</span></button>
+                        <h4 class="modal-title" id="myModalLabel">Settings</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form class="form-horizontal" role="form">
+                            <div class="form-group">
+                                <div class="col-sm-offset-3 col-sm-9">
+
+                                </div>
+                            </div>
+                            <div class="form-group">
+
+                                <label for="target_temp" class="col-sm-5 control-label">Target Temp</label>
+
+                                <div class="col-sm-6">
+                                    <input type="input" class="form-control" id="target_temp"
+                                           placeholder="205" value="{{target_temp}}"/>
+                                </div>
+
+                                <label for="sample_size" class="col-sm-5 control-label">Sample Size</label>
+
+                                <div class="col-sm-6">
+                                    <input type="input" class="form-control" id="sample_size"
+                                           placeholder="20" value="{{sample_size}}"/>
+                                </div>
+
+                                <label for="tolerance" class="col-sm-5 control-label">Tolerance(deg F)</label>
+
+                                <div class="col-sm-6">
+                                    <input type="input" class="form-control" id="tolerance"
+                                           placeholder="in degrees" value="{{tolerance}}"/>
+                                </div>
+
+                                <label for="heat_duration" class="col-sm-5 control-label">Heat Duration(ms)</label>
+
+                                <div class="col-sm-6">
+                                    <input type="input" class="form-control" id="heat_duration"
+                                           placeholder="in degrees" value="{{heat_duration}}"/>
+                                </div>
+
+                                <label for="cool_duration" class="col-sm-5 control-label">Cool Duration(ms)</label>
+
+                                <div class="col-sm-6">
+                                    <input type="input" class="form-control" id="cool_duration"
+                                           placeholder="in degrees" value="{{cool_duration}}"/>
+                                </div>
+
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" id="save-settings" class="btn btn-primary">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="http://d3js.org/d3.v3.js"></script>
+<script type="text/javascript" src="/static/smoothie.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/static/bootstrap-switch.min.js"></script>
+
+<script>
+
+
+function pad2(number) { return (number < 10 ? '0' : '') + number }
+function timeFormatter(date) {
+    return pad2(date.getMinutes()) + ':' + pad2(date.getSeconds())
+}
+
+var format = d3.time.format("%Y-%m-%d %H:%M:%S")
+
+var temps = new TimeSeries();
+var avg_temps = new TimeSeries();
+var target_temp = new TimeSeries();
+
+var smoothie = new SmoothieChart({grid:{fillStyle:'rgba(86,61,124,.15)',millisPerLine:5000,verticalSections:4},
+    timestampFormatter:timeFormatter,
+    labels:{fontSize:15,fillStyle:'#000000'},
+    minValue:{{min_temp}},
+    maxValue:{{max_temp}}})
+smoothie.streamTo(document.getElementById("mycanvas"),1000);
+
+smoothie.addTimeSeries(avg_temps, {lineWidth:2,strokeStyle:'#8080c0',fillStyle:'rgba(128,128,255,0.50)'});
+smoothie.addTimeSeries(temps, {lineWidth:2,strokeStyle:'navy'});
+smoothie.addTimeSeries(target_temp, {lineWidth:2,strokeStyle:'#ff0000'});
+
+
+
+var idx = 1
+function reload(){
+    d3.json("/temps/"+idx, function(error, json) {
+        if (error) return console.warn(error);
+        current_idx = 0
+        json.forEach(function(d) {
+            d.dt = format.parse(d[1]);
+            d.temp = +d[2];
+            d.avg_temp = +d[4]
+            temps.append(d.dt,d.temp)
+            avg_temps.append(d.dt,d.avg_temp)
+        });
+
+        resp_size = json.length;
+        if(resp_size > 0){
+            idx = json[resp_size-1][0]
+            $('#currentTemp').html(json[resp_size-1][2].toFixed(3) )
+            $('#averageTemp').html(json[resp_size-1][4].toFixed(1))
+            hs = json[resp_size-1][3]
+            $('#heatSource').html(hs)
+            if(hs == "on"){
+                $('#heatSource').addClass('text-danger')
+                $('#heatSource').removeClass('text-primary')
+            }else{
+                $('#heatSource').addClass('text-primary')
+                $('#heatSource').removeClass('text-danger')
+            }
+        }
+        target_temp.append(new Date(),$('#target_temp').val())
+    });
+}
+
+
+var autoReloadStatus = 0
+var autoReload = null
+function toggleAutoReload() {
+    if(autoReloadStatus == 0){
+        autoReload = setInterval(function(){reload()}, 2000);
+        autoReloadStatus = 1
+    }else{
+        clearInterval(autoReload);
+        autoReloadStatus = 0
+    }
+}
+
+toggleAutoReload()
+
+function saveSettings(e,s) {
+    var body = {'enabled': $('#enabled').prop('checked'),
+                'target_temp': $('#target_temp').val(),
+                'sample_size': $('#sample_size').val(),
+                'tolerance'  : $('#tolerance').val(),
+                'heat_duration': $('#heat_duration').val(),
+                'cool_duration': $('#cool_duration').val()}
+    console.log(body)
+    console.log(e)
+    $.ajax({
+        type:   'POST'  ,
+        url:   '/settings',
+        data:   JSON.stringify(body),
+        contentType:   'application/json',
+        success:   function(data){
+            console.log(data)
+            if(data == 'ok'){
+                if(e.target.id == 'save-settings'){
+                    $("#myModal").modal("hide")
+                    location.reload()
+                }
+            }else{
+                alert('Settings not saved: '+data)
+            }
+        }
+    });
+}
+
+$( "#save-settings" ).click(saveSettings);
+
+function setTimeRangeToDisplay(e){
+    id = e.target.id
+    if(id == 'autoRefresh'){
+        toggleAutoReload()
+    }else if(id=='mod'){
+        //ignore
+    }else{
+        //broken
+    }
+}
+
+$('#myModal').on('show.bs.modal', function () {
+  $.ajax({
+        type:   'GET'  ,
+        url:   '/profiles',
+        contentType:   'application/json',
+        success:   function(data){
+            console.log(data)
+        }
+    });
+})
+
+$( ".btn" ).click(setTimeRangeToDisplay)
+
+$("#enabled").bootstrapSwitch()
+$("#enabled").on('switchChange.bootstrapSwitch',saveSettings )
+
+
+
+
+
+</script>

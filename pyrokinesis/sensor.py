@@ -1,5 +1,6 @@
 from w1thermsensor import W1ThermSensor
 import Adafruit_MAX31855.MAX31855 as MAX31855
+import logging
 
 # Supported units
 DEGREES_F = 'TEMP_UNIT_F'
@@ -17,11 +18,16 @@ class BaseSensor:
         pass
 
     def is_ready(self):
-        temp = self.get_temperature()
-        print 'Ready check - temperature reading:  %s' % temp
-        if temp is not None and 30 < temp < 130:
-            return True
-        else:
+        try:
+            temp = self.get_temperature()
+            print "Probing..." % self
+            print 'Ready check - temperature reading:  %s' % temp
+            if temp is not None and 30 < temp < 130:
+                return True
+            else:
+                return False
+        except Exception, err:
+            print "%s sensor cannot be loaded" % self
             return False
 
     def __str__(self):
@@ -63,28 +69,20 @@ class Sensor:
 
         self.active_sensor = None
 
-        try:
-            print "Probing 1 wire..."
-            wire1 = Wire1Sensor(temp_unit=temp_unit)
-            if wire1.is_ready():
-                print "1 wire sensor is ready"
-                self.active_sensor = wire1
-        except Exception, err:
-            print "1 wire sensor cannot be loaded"
+        wire1 = Wire1Sensor(temp_unit=temp_unit)
+        if wire1.is_ready():
+            logging.info("1 wire sensor is ready")
+            self.active_sensor = wire1
 
-        try:
-            print "Probing k-type..."
-            ktype = KTypeSensor(temp_unit=temp_unit)
-            if ktype.is_ready():
-                print "K-type sensor is ready"
-                self.active_sensor = ktype
-        except Exception, err:
-            print "K-type sensor cannot be loaded"
+        ktype = KTypeSensor(temp_unit=temp_unit)
+        if ktype.is_ready():
+            logging.info("K-type sensor is ready")
+            self.active_sensor = ktype
 
         if self.active_sensor is None:
             raise RuntimeError('No temperature sensor found')
-        print "%s is the active sensor" % self.active_sensor
-        print "Sensor initialization complete!"
+        logging.info("%s is the active sensor" % self.active_sensor)
+        logging.info("Sensor initialization complete!")
 
     def get_temperature(self):
         return self.active_sensor.get_temperature()
@@ -95,5 +93,5 @@ if __name__ == '__main__':
 
     sensor = Sensor()
     while True:
-        print sensor.get_temperature()
+        print(sensor.get_temperature())
         time.sleep(2)

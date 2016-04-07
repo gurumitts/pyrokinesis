@@ -3,14 +3,12 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import RPi.GPIO as GPIO
 from sensor import Sensor
 from data_store import DataStore
+import logging
 
 scheduler = BackgroundScheduler()
 
-
+# GPIO pin to control heat
 heat_source_pin = 16
-
-heat_start = 0
-heat_end = 0
 
 print GPIO.VERSION
 GPIO.setmode(GPIO.BOARD)
@@ -21,16 +19,24 @@ def current_time():
     return int(round(time.time() * 1000))
 
 
-def get_db(self):
+def get_db():
     db = DataStore()
     return db
 
 
-class Control():
+class Control:
 
     def __init__(self):
-        print 'Control is starting...'
+        logging.info('Control is starting...')
+        self.heat_start = 0
+        self.heat_end = 0
         self.sensor = Sensor()
+
+    def start(self):
+        scheduler.start()
+        scheduler.add_job(self.track, 'interval', seconds=2)
+        scheduler.add_job(self.control_power, 'interval', seconds=5)
+        scheduler.print_jobs()
 
     def set_heat_source(self, switch):
         GPIO.output(heat_source_pin, switch)
@@ -42,28 +48,26 @@ class Control():
         print 'starting burst..'
         now = current_time()
         if self.heat_is_on():
-            print 'heat is already on %s %s %s' % (now, heat_start, heat_duration)
-            if now > heat_start + heat_duration:
+            print 'heat is already on %s %s %s' % (now, self.heat_start, heat_duration)
+            if now > self.heat_start + heat_duration:
                 print 'turning it off'
                 self.heat_source_off()
             else:
                 print 'leaving it on'
         else:
-            print 'heat is off %s %s %s' % (now, heat_end, cool_duration)
-            if now > heat_end + cool_duration:
+            print 'heat is off %s %s %s' % (now, self.heat_end, cool_duration)
+            if now > self.heat_end + cool_duration:
                 print 'cool done period ended, turing heat on'
                 self.heat_source_on()
             else:
                 print 'still cooling down'
 
     def heat_source_on(self):
-        global heat_start
-        heat_start = current_time()
+        self.heat_start = current_time()
         self.set_heat_source(True)
 
     def heat_source_off(self):
-        global heat_end
-        heat_end = current_time()
+        self.heat_end = current_time()
         self.set_heat_source(False)
 
     def track(self):
@@ -76,7 +80,6 @@ class Control():
             print e
             print e.message
         print current_temp
-
 
     def control_power(self):
         try:

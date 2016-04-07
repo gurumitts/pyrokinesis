@@ -2,6 +2,8 @@ from flask import Flask
 from flask import render_template, request
 import math
 from data_store import DataStore
+import json
+import logging
 
 app = Flask(__name__)
 
@@ -15,7 +17,7 @@ def index(name=None):
     db.shutdown()
     min_temp = math.floor(settings['target_temp'] - temp_range/2)
     max_temp = math.ceil(settings['target_temp'] + temp_range/2)
-    return render_template('index.html', min_temp=min_temp, max_temp=max_temp, **settings)
+    return render_template('index3.html', min_temp=min_temp, max_temp=max_temp, **settings)
 
 
 @app.route('/history')
@@ -39,14 +41,54 @@ def temps(idx=0):
     return temps
 
 
+@app.route('/editprofiles', methods=['GET'])
+def edit_profiles():
+    return render_template('profiles.html')
+
+
+@app.route('/profiles', methods=['GET', 'POST', 'DELETE'])
+def profiles():
+    db = DataStore()
+    if request.method == 'POST':
+        _profiles = request.get_json()
+        for _profile in _profiles:
+            if 'id' in _profile and _profile['id'] is not u'':
+                logging.debug('updating: %s' % _profile)
+                db.save_profile(_profile)
+            else:
+                logging.debug('adding: %s' % _profile)
+                db.add_profile(_profile)
+        db.shutdown()
+        return 'ok'
+    elif request.method == 'DELETE':
+        _profile = request.get_json()
+        logging.debug('deleting: %s' % _profile)
+        db.delete_profile(_profile['id'])
+        db.shutdown()
+        return 'ok'
+    else:
+        _profiles = db.get_profiles()
+        db.shutdown()
+        return json.dumps(_profiles)
+
+
 @app.route('/settings', methods=['POST'])
 def settings():
-    settings = request.get_json()
+    _settings = request.get_json()
     db = DataStore()
-    print 'Saving new settings: ' % settings
-    db.save_settings(settings)
-    return "ok"
+    logging.debug('Saving new settings: %s' % _settings)
+    db.save_profile(_settings)
+    db.set_active_profile(_settings['id'])
+    db.apply_active_profile()
+    db.save_settings(_settings)
+    return 'ok'
 
-if __name__ == '__main__':
+
+def start():
     app.debug = True
     app.run(host='0.0.0.0')
+
+
+'''if __name__ == '__main__':
+    app.debug = True
+    app.run(host='0.0.0.0')'''

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/>
+</head>
+<style>
+
+    h4 {
+    margin-top: 25px;
+    }
+    .row {
+    margin-bottom: 20px;
+    }
+    .row .row {
+    margin-top: 10px;
+    margin-bottom: 0;
+    }
+
+
+    hr {
+    margin-top: 40px;
+    margin-bottom: 40px;
+    }
+
+
+</style>
+<body>
+<div class="container">
+
+    <div class="page-header">
+        <h1>Pyrokinesis</h1>
+    </div>
+
+    <p class="lead">Edit profiles:
+
+    </p>
+
+
+    <div class="table-responsive">
+        <table class="table table-striped">
+        <thead class="thead-default">
+            <tr>
+                <th>Name</th>
+                <th>Target Temp</th>
+                <th>Sample Size</th>
+                <th>Tolerance</th>
+                <th>Heat Duration(ms)</th>
+                <th>Cool Duration(ms)</th>
+                <th />
+            </tr>
+        </thead>
+        <tbody data-bind='foreach: profiles'>
+            <tr>
+                <td><input class='required' data-bind='value: name, uniqueName: true' /></td>
+                <td><input class='required number' data-bind='value: target_temp' /></td>
+                <td><input class='required number' data-bind='value: sample_size' /></td>
+                <td><input class='required number' data-bind='value: tolerance' /></td>
+                <td><input class='required number' data-bind='value: heat_duration' /></td>
+                <td><input class='required number' data-bind='value: cool_duration' /></td>
+                <td><a href='#' data-bind='click: $root.removeProfile'>Delete</a></td>
+            </tr>
+        </tbody>
+    </table>
+
+    </div>
+
+    <p class="lead">
+        <button class="btn btn-primary btn-xs" id="add_new" data-bind='click: addProfile'>
+            Add New
+        </button>
+        <button class="btn btn-primary btn-xs" id="save" data-bind='click: save'>
+            Save
+        </button>
+        <a href="/" class="btn btn-primary btn-xs" role="button">Home</a>
+    </p>
+
+
+</div>
+</body>
+
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="http://d3js.org/d3.v3.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/smoothie/1.27.0/smoothie.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.0/knockout-min.js"></script>
+
+<script>
+
+function profilesModel(){
+    var self = this
+    this.profiles = ko.observableArray();
+    this.activeProfile = ko.observable();
+
+    this.addProfile = function(){
+        this.profiles.push({
+            "name":"new profile",
+            "heat_duration":15000,
+            "cool_duration":10000,
+            "sample_size":2,
+            "target_temp":130,
+            "active":0,
+            "tolerance":8,
+            "id":''
+        });
+    }
+
+    this.removeProfile = function(profile){
+        self.profiles.remove(function (item) { return item.id == profile['id']; } )
+        deleteProfile(profile)
+    };
+
+    this.save = function(){
+        saveProfiles()
+    };
+}
+
+var profiles = new profilesModel();
+
+function loadProfiles(vm) {
+    $.ajax({
+        type:   'GET'  ,
+        url:   '/profiles',
+        contentType:   'application/json',
+        success:   function(data){
+            console.log(data)
+            _profiles = JSON.parse(data)
+            vm.profiles.removeAll()
+            _profiles.forEach(function(row){
+                vm.profiles.push(row)
+                if(row['active'] == 1){
+                    vm.activeProfile(row['id'])
+                }
+            })
+        }
+    })
+};
+
+function saveProfiles() {
+    $.ajax({
+        type:   'POST'  ,
+        url:   '/profiles',
+        data:   JSON.stringify(profiles.profiles()),
+        contentType:   'application/json',
+        success:   function(data){
+            console.log(data)
+            if(data != 'ok'){
+                alert('Profiles not saved: '+data)
+            }
+        }
+    });
+}
+
+function deleteProfile(profile) {
+    $.ajax({
+        type:   'DELETE'  ,
+        url:   '/profiles',
+        data:   JSON.stringify(profile),
+        contentType:   'application/json',
+        success:   function(data){
+            console.log(data)
+            if(data != 'ok'){
+                alert('Unable to delete: '+data)
+            }
+        }
+    });
+}
+
+ko.applyBindings(profiles)
+loadProfiles(profiles)
+
+</script>
