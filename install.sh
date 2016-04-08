@@ -19,7 +19,7 @@ if [ ! -d ${PYRO_LOGS_DIR} ]; then
     mkdir ${PYRO_LOGS_DIR}
 fi
 
-cp ${PYRO_BIN}/pyro /etc/init.d/
+cp -f ${PYRO_BIN}/pyro /etc/init.d/
 
 update-rc.d pyro defaults
 
