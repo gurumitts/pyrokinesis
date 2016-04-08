@@ -8,10 +8,10 @@ import logging
 scheduler = BackgroundScheduler()
 
 # GPIO pin to control heat
-heat_source_pin = 16
+heat_source_pin = 23
 
 print GPIO.VERSION
-GPIO.setmode(GPIO.BOARD)
+GPIO.setmode(GPIO.BCM)
 GPIO.setup(heat_source_pin, GPIO.OUT)
 
 
