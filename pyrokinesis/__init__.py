@@ -1,10 +1,10 @@
 import logging
 from logging.config import fileConfig
-#from control import Control
+from control import Control
 from data_store import DataStore
 import data_store
 import web
-import thread
+
 
 
 def start():
@@ -18,8 +18,8 @@ def start():
     settings = db.get_settings()
     logging.debug('starting with settings: %s'% settings)
 
-    #_control = Control()
-    #_control.start()
+    _control = Control()
+    _control.start()
 
 
     print('starting web')
