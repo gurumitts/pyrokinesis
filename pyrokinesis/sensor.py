@@ -18,16 +18,12 @@ class BaseSensor:
         pass
 
     def is_ready(self):
-        try:
-            temp = self.get_temperature()
-            print "Probing..." % self
-            print 'Ready check - temperature reading:  %s' % temp
-            if temp is not None and 30 < temp < 130:
-                return True
-            else:
-                return False
-        except Exception, err:
-            print "%s sensor cannot be loaded" % self
+        temp = self.get_temperature()
+        print "Probing..." % self
+        print 'Ready check - temperature reading:  %s' % temp
+        if temp is not None and 30 < temp < 130:
+            return True
+        else:
             return False
 
     def __str__(self):
@@ -69,10 +65,13 @@ class Sensor:
 
         self.active_sensor = None
 
-        wire1 = Wire1Sensor(temp_unit=temp_unit)
-        if wire1.is_ready():
-            logging.info("1 wire sensor is ready")
-            self.active_sensor = wire1
+        try:
+            wire1 = Wire1Sensor(temp_unit=temp_unit)
+            if wire1.is_ready():
+                logging.info("1 wire sensor is ready")
+                self.active_sensor = wire1
+        except Exception, err:
+            print "Wire1Sensor cannot be loaded"
 
         ktype = KTypeSensor(temp_unit=temp_unit)
         if ktype.is_ready():
