@@ -10,10 +10,10 @@
 ### END INIT INFO
 
 dir="/opt/pyrokinesis"
-cmd="bin/start.sh"
+cmd="python run.py"
 user=""
 
-name=`basename $0`
+name=pyro
 pid_file="/var/run/$name.pid"
 stdout_log="/var/log/pyro/$name_out.log"
 stderr_log="/var/log/pyro/$name_err.log"
