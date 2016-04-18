@@ -27,12 +27,16 @@ def get_db():
 class Control:
 
     def __init__(self):
-        logging.info('Control is starting...')
+        logging.getLogger('pyro').info('Control is starting...')
         self.heat_start = 0
         self.heat_end = 0
         self.sensor = Sensor()
 
     def start(self):
+        while not self.sensor.ready():
+            self.sensor.initialize()
+            time.sleep(5)
+
         scheduler.start()
         scheduler.add_job(self.track, 'interval', seconds=2)
         scheduler.add_job(self.control_power, 'interval', seconds=5)
@@ -45,22 +49,24 @@ class Control:
         return GPIO.input(heat_source_pin)
 
     def burst_heat(self, heat_duration, cool_duration):
-        print 'starting burst..'
+        logging.getLogger('pyro').debug('starting burst..')
         now = current_time()
         if self.heat_is_on():
-            print 'heat is already on %s %s %s' % (now, self.heat_start, heat_duration)
+            logging.getLogger('pyro').debug('heat is already on %s %s %s' %
+                                            (now, self.heat_start, heat_duration))
             if now > self.heat_start + heat_duration:
-                print 'turning it off'
+                logging.getLogger('pyro').debug('turning it off')
                 self.heat_source_off()
             else:
-                print 'leaving it on'
+                logging.getLogger('pyro').debug('leaving it on')
         else:
-            print 'heat is off %s %s %s' % (now, self.heat_end, cool_duration)
+            logging.getLogger('pyro').debug('heat is off %s %s %s' %
+                                            (now, self.heat_end, cool_duration))
             if now > self.heat_end + cool_duration:
-                print 'cool done period ended, turing heat on'
+                logging.getLogger('pyro').debug('cool done period ended, turing heat on')
                 self.heat_source_on()
             else:
-                print 'still cooling down'
+                logging.getLogger('pyro').debug('still cooling down')
 
     def heat_source_on(self):
         self.heat_start = current_time()
@@ -85,7 +91,7 @@ class Control:
         try:
             db = get_db()
             control_data = db.get_control_data()
-            print 'using %s to control power' % control_data
+            logging.getLogger('pyro').debug('using %s to control power' % control_data)
             target_temp = control_data['target_temp']
             enabled = control_data['enabled']
             heat_source = control_data['heat_source']
@@ -101,7 +107,7 @@ class Control:
             if enabled is 0:
                 self.heat_source_off()
                 db.set_heat_source_status('off')
-                print 'disabled turning off heat'
+                logging.getLogger('pyro').debug('disabled turning off heat')
             else:
                 if temp > target_temp:
                     if temp < target_temp + tolerance and slope < 0:

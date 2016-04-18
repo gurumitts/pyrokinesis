@@ -10,7 +10,7 @@
 ### END INIT INFO
 
 dir="/opt/pyrokinesis"
-cmd="python run.py"
+cmd="start.sh"
 user=""
 
 name=pyro

@@ -53,16 +53,16 @@ def profiles():
         _profiles = request.get_json()
         for _profile in _profiles:
             if 'id' in _profile and _profile['id'] is not u'':
-                logging.debug('updating: %s' % _profile)
+                logging.getLogger('pyro').debug('updating: %s' % _profile)
                 db.save_profile(_profile)
             else:
-                logging.debug('adding: %s' % _profile)
+                logging.getLogger('pyro').debug('adding: %s' % _profile)
                 db.add_profile(_profile)
         db.shutdown()
         return 'ok'
     elif request.method == 'DELETE':
         _profile = request.get_json()
-        logging.debug('deleting: %s' % _profile)
+        logging.getLogger('pyro').debug('deleting: %s' % _profile)
         db.delete_profile(_profile['id'])
         db.shutdown()
         return 'ok'
@@ -76,7 +76,7 @@ def profiles():
 def settings():
     _settings = request.get_json()
     db = DataStore()
-    logging.debug('Saving new settings: %s' % _settings)
+    logging.getLogger('pyro').debug('Saving new settings: %s' % _settings)
     db.save_profile(_settings)
     db.set_active_profile(_settings['id'])
     db.apply_active_profile()
