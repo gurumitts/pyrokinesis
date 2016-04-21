@@ -10,7 +10,7 @@
 ### END INIT INFO
 
 dir="/opt/pyrokinesis"
-cmd="start.sh"
+cmd="./start.sh"
 user=""
 
 name=pyro
