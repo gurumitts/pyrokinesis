@@ -8,4 +8,4 @@ fi
 git pull
 
 
-python bin/run.py $1
+python run.py $1
