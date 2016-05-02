@@ -13,8 +13,8 @@ c_to_f = lambda c: c * 9.0 / 5.0 + 32.0
 class BaseSensor:
     def __init__(self, temp_unit=DEGREES_F):
         self._temperature_unit = temp_unit
-    def get_temperature(self):
 
+    def get_temperature(self):
         pass
 
     def is_ready(self):
@@ -23,7 +23,7 @@ class BaseSensor:
             logging.getLogger('pyro').debug('Probing...' % self)
             logging.getLogger('pyro').debug('Ready check - temperature reading:  %s'
                                             % temp)
-            if temp is not None and 40 < temp < 130:
+            if temp is not None and 40 < temp < 280:
                 return True
             else:
                 return False

@@ -107,7 +107,7 @@ class DataStore:
                        'sample_size': profile['sample_size'],
                        'tolerance' : profile['tolerance'],
                        'heat_duration': profile['heat_duration'],
-                       'cool_duration': profile['cool_duration'] }
+                       'cool_duration': profile['cool_duration']}
         self.save_settings(new_setting)
 
     def save_settings(self, settings):
@@ -126,6 +126,30 @@ class DataStore:
         self.connection.commit()
         cursor.close()
 
+    def set_enabled(self, enabled):
+        params = []
+        if enabled:
+            params.append('1')
+        else:
+            params.append('0')
+
+        cursor = self.connection.cursor()
+        cursor.execute("""update settings set ENABLED = ? where id = 1 ;""", params)
+        self.connection.commit()
+        cursor.close()
+
+    def get_enabled(self, ):
+        cursor = self.connection.cursor()
+        cursor.execute("""SELECT * FROM settings WHERE id = 1""")
+        r = cursor.fetchone()
+
+        if r is not None:
+            for key in r.keys():
+                if key.lower() == 'enabled':
+                    return 'true' if 1 == r[key] else 'false'
+        cursor.close()
+        return False
+
     def get_settings(self):
         cursor = self.connection.cursor()
         cursor.execute("""SELECT * FROM settings WHERE id = 1""")
@@ -137,7 +161,7 @@ class DataStore:
                     settings[key.lower()] = 'true' if 1 == r[key] else 'false'
                 else:
                     settings[key.lower()] = r[key]
-            cursor.close()
+        cursor.close()
         return settings
 
     def get_heat_source_status(self):

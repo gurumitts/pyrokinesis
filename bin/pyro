@@ -15,8 +15,8 @@ user=""
 
 name=pyro
 pid_file="/var/run/$name.pid"
-stdout_log="/var/log/pyro/$name_out.log"
-stderr_log="/var/log/pyro/$name_err.log"
+stdout_log="/var/log/pyro/pyro_stdout.log"
+stderr_log="/var/log/pyro/pyro_stderr.log"
 
 get_pid() {
     cat "$pid_file"
@@ -49,6 +49,7 @@ case "$1" in
     if is_running; then
         echo -n "Stopping $name.."
         kill `get_pid`
+        pkill -f python
         for i in {1..10}
         do
             if ! is_running; then

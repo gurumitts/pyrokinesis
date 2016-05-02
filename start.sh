@@ -7,5 +7,6 @@ fi
 
 git pull
 
+rm -f db/app.sqlite3.db
 
 python run.py $1
