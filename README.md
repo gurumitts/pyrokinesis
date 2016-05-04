@@ -10,15 +10,17 @@ To solve that problem (but really mostly to learn something new) I started this 
 
 ## Overview
 
-The RasphberryPi runs 2 application:
-- control.py
+Pyrokinesis has 2 main coponents:
+- control
   - Record the temperatures received from the probe
   - Sample the temperature readings
   - Decide to turn on or off the heat source to keep the smoker at the target temperature
-- web.py - a flask web application
+- web server - a flask web application
   - Graphs the temperatures in real time  using smoothiecharts
   - Historical Graph using d3js
   - Set the target temperature
+  - Set other settings
+  - Manage profiles
   - Enable / disable the heat source
 
 **DO NOT LEAVE ANY SETUP USING THIS CODE UNATTENDED.  I AM NOT RESPONSIBLE FOR ANY DAMAGES**
