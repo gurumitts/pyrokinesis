@@ -60,3 +60,11 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+#pycharms
+.idea*
+
+#Pyrokinesis specific
+*.sqlite3.db
+profiles.db
+working*
