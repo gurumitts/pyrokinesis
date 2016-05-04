@@ -32,7 +32,8 @@ Pyrokinesis has 2 main coponents:
 1. RaspberryPI (any model should work - I used a b+)
 2. High Temp Waterproof DS18B20 Digital temperature sensor (http://www.adafruit.com/product/642)
 3. Powerswitch tail 2 (http://www.adafruit.com/product/268)
-4. A k-type thermacouple from ThermoWorks http://www.thermoworks.com/products/probe/tc_imm_gen.html
+4. A k-type thermocouple from ThermoWorks http://www.thermoworks.com/products/probe/tc_imm_gen.html
+
 ####Software:
 1. Flask
 2. APScheduler
