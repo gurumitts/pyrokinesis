@@ -38,13 +38,14 @@ class Control:
         self.heat_start = 0
         self.heat_end = 0
         self.sensor = Sensor()
+        self.turn_led_off(ready_led)
 
     def start(self):
-        self.turn_led_on(ready_led)
         while not self.sensor.ready():
             self.sensor.initialize()
             self.flash_led(program_led, 1, 5)
 
+        self.turn_led_on(ready_led)
         GPIO.add_event_detect(program_button, GPIO.RISING, callback=self.toggle_program, bouncetime=5000)
         scheduler.start()
         scheduler.add_job(self.track, 'interval', seconds=2)
