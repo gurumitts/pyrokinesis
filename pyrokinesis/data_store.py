@@ -1,5 +1,4 @@
 import sqlite3
-import json
 import random
 import time
 import logging
@@ -112,16 +111,11 @@ class DataStore:
 
     def save_settings(self, settings):
         params = []
-        enabled = settings['enabled']
-        if enabled:
-            params.append('1')
-        else:
-            params.append('0')
         params.extend([settings['target_temp'], settings['sample_size'],
                        settings['tolerance'], settings['heat_duration'], settings['cool_duration']])
 
         cursor = self.connection.cursor()
-        cursor.execute("""update settings set ENABLED = ?, TARGET_TEMP = ?,
+        cursor.execute("""update settings set TARGET_TEMP = ?,
             SAMPLE_SIZE = ?, TOLERANCE = ?, heat_duration = ?, cool_duration = ? where id = 1 ;""", params)
         self.connection.commit()
         cursor.close()
@@ -216,15 +210,20 @@ class DataStore:
         if start_idx is None:
             start_idx = 0
         cursor = self.connection.cursor()
-        cursor.execute("""select t.id,datetime(t.dt,'localtime'),
-            t.temp,s.heat_source,(select round(avg(t.temp),1) from temperatures t where t.id in
+        cursor.execute("""select t.id,datetime(t.dt,'localtime') as dt,
+            t.temp,s.heat_source,s.enabled,(select round(avg(t.temp),1) from temperatures t where t.id in
             (select id from temperatures ORDER BY dt DESC Limit (select sample_size from settings where id =1))) as avg_temp
             from temperatures t,settings s where t.id > ?""", [start_idx])
         rows = cursor.fetchall()
         temps = []
-        for row in rows:
-            temps.append([row[0], row[1], row[2], row[3], row[4]])
-        return json.dumps(temps)
+        if rows is not None:
+            for row in rows:
+                temp = {}
+                for key in row.keys():
+                    temp[key.lower()] = row[key]
+                temps.append(temp)
+        cursor.close()
+        return temps
 
     def shutdown(self):
         self.connection.close()
@@ -336,7 +335,7 @@ if __name__ == '__main__':
         db.add_temperature(205 + 12 * random.random())
         count += 1
         time.sleep(1)
-        temps = json.loads(db.get_temps(count - 1))
+        temps = db.get_temps(count - 1)
         print(temps[len(temps) - 1])
         print(db.get_control_data())
 

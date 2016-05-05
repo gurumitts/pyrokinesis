@@ -38,7 +38,7 @@ def temps(idx=0):
     db = DataStore()
     temps = db.get_temps(idx)
     db.shutdown()
-    return temps
+    return json.dumps(temps)
 
 
 @app.route('/editprofiles', methods=['GET'])
@@ -84,8 +84,17 @@ def settings():
     return 'ok'
 
 
+@app.route('/enabled', methods=['POST'])
+def enabled():
+    _settings = request.get_json()
+    db = DataStore()
+    logging.getLogger('pyro').debug('Setting enabled: %s' % _settings)
+    db.set_enabled(_settings['enabled'])
+    return 'ok'
+
+
 def start():
-    # app.debug = True
+    app.debug = True
     app.run(host='0.0.0.0')
 
 
