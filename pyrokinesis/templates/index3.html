@@ -53,7 +53,7 @@
     </div>
     <p class="lead">
 
-        <input id="enabled" type="checkbox" data-bind="checked: enabled"/>Enabled
+        <input id="enabled" type="checkbox" data-bind="checked: enabled, click: saveEnabled"/>Enabled
 
         <button class="btn btn-primary btn-xs" id="mod" data-toggle="modal" data-target="#myModal">
             Settings
@@ -200,9 +200,12 @@ function pyroModel(){
         this.settings(newActive)
     }, this);
 
-    this.enabled.subscribe(function(newValue) {
-        saveSettings()
-    },this);
+    this.saveEnabled = function(newValue) {
+        console.log('enabled save')
+        saveEnabled()
+    };
+
+
 }
 
 var pyro = new pyroModel();
@@ -214,21 +217,22 @@ function reload(){
         if (error) return console.warn(error);
         current_idx = 0
         json.forEach(function(d) {
-            d.dt = format.parse(d[1]);
-            d.temp = +d[2];
-            d.avg_temp = +d[4]
+            d.dt = format.parse(d['dt']);
+            d.temp = +d['temp'];
+            d.avg_temp = +d['avg_temp']
             temps.append(d.dt,d.temp)
             avg_temps.append(d.dt,d.avg_temp)
         });
 
         resp_size = json.length;
         if(resp_size > 0){
-            idx = json[resp_size-1][0]
-            //$('#currentTemp').html(json[resp_size-1][2].toFixed(3) )
-            pyro.currentTemp(json[resp_size-1][2].toFixed(3) )
-            pyro.averageTemp(json[resp_size-1][4].toFixed(1))
-            hs = json[resp_size-1][3]
-            pyro.heatSource(hs)
+            current = json[resp_size-1]
+            idx = current['id']
+            pyro.currentTemp(current['temp'].toFixed(3) )
+            pyro.averageTemp(current['avg_temp'].toFixed(1))
+            pyro.heatSource(current['heat_source'])
+            pyro.enabled(current['enabled'])
+
         }
         target_temp.append(new Date(),pyro.targetTemp())
     });
@@ -251,7 +255,6 @@ toggleAutoReload()
 
 function saveSettings(e,s) {
     var body = pyro.settings()
-    body['enabled'] = pyro.enabled()
     console.log(body)
     $.ajax({
         type:   'POST'  ,
@@ -266,6 +269,24 @@ function saveSettings(e,s) {
                     location.reload()
                 }
             }else{
+                alert('Settings not saved: '+data)
+            }
+        }
+    });
+}
+
+function saveEnabled(e,s) {
+    var body = pyro.settings()
+    body['enabled'] = pyro.enabled()
+    console.log(body)
+    $.ajax({
+        type:   'POST'  ,
+        url:   '/enabled',
+        data:   JSON.stringify(body),
+        contentType:   'application/json',
+        success:   function(data){
+            console.log(data)
+            if(data != 'ok'){
                 alert('Settings not saved: '+data)
             }
         }

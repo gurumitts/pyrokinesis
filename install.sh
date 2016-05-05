@@ -12,7 +12,6 @@ else
     git clone https://github.com/gurumitts/pyrokinesis.git
     cd ${PYRO_HOME}
     git pull
-    git checkout the-rewrite
 fi
 
 if [ ! -d ${PYRO_LOGS_DIR} ]; then
