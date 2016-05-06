@@ -1,6 +1,6 @@
 import logging
 from logging.config import fileConfig
-from control import Control
+#from control import Control
 from data_store import DataStore
 import data_store
 import web
@@ -18,8 +18,8 @@ def start():
     settings = db.get_settings()
     logging.getLogger('pyro').debug('starting with settings: %s'% settings)
 
-    control = Control()
-    control.start()
+    #control = Control()
+    #control.start()
 
 
     print('starting web')
