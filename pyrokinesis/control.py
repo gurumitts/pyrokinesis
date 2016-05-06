@@ -55,7 +55,7 @@ class Control:
     def toggle_program(self, channel):
         db = get_db()
         enabled = db.get_enabled()
-        logging.getLogger('pyro').info('Program was: ', enabled)
+        logging.getLogger('pyro').info('Program was: %s' % enabled)
         if enabled == 'true':
             logging.getLogger('pyro').info('Program will be set to : false')
             db.set_enabled(False)
@@ -64,7 +64,7 @@ class Control:
             db.set_enabled(True)
             self.turn_led_on(program_led)
         enabled = db.get_enabled()
-        logging.getLogger('pyro').info('Program is: ', enabled)
+        logging.getLogger('pyro').info('Program is: %s' % enabled)
         db.shutdown()
 
     def turn_led_on(self, led):
@@ -81,7 +81,6 @@ class Control:
             self.turn_led_off(led)
             time.sleep(.5)
             count += 1
-
 
     def set_heat_source(self, switch):
         GPIO.output(heat_source_pin, switch)
@@ -146,9 +145,11 @@ class Control:
                 avg_temp = 1
             if enabled is 0:
                 self.heat_source_off()
+                self.turn_led_off(program_led)
                 db.set_heat_source_status('off')
                 logging.getLogger('pyro').debug('disabled turning off heat')
             else:
+                self.turn_led_on(program_led)
                 if temp > target_temp:
                     if temp < target_temp + tolerance and slope < 0:
                         self.burst_heat(heat_duration, cool_duration)
