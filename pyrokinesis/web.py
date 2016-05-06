@@ -111,7 +111,7 @@ def view_log(log=None):
     return Response(contents, mimetype='text/plain')
 
 def start():
-    app.debug = True
+    # app.debug = True
     app.run(host='0.0.0.0')
 
 
