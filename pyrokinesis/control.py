@@ -46,7 +46,7 @@ class Control:
             self.flash_led(program_led, 1, 5)
 
         self.turn_led_on(ready_led)
-        GPIO.add_event_detect(program_button, GPIO.RISING, callback=self.toggle_program, bouncetime=5000)
+        #GPIO.add_event_detect(program_button, GPIO.RISING, callback=self.toggle_program, bouncetime=5000)
         scheduler.start()
         scheduler.add_job(self.track, 'interval', seconds=2)
         scheduler.add_job(self.control_power, 'interval', seconds=5)
@@ -145,11 +145,11 @@ class Control:
                 avg_temp = 1
             if enabled is 0:
                 self.heat_source_off()
-                # self.turn_led_off(program_led)
+                self.turn_led_off(program_led)
                 db.set_heat_source_status('off')
                 logging.getLogger('pyro').debug('disabled turning off heat')
             else:
-                # self.turn_led_on(program_led)
+                self.turn_led_on(program_led)
                 if temp > target_temp:
                     if temp < target_temp + tolerance and slope < 0:
                         self.burst_heat(heat_duration, cool_duration)
