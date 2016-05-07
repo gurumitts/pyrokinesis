@@ -15,6 +15,7 @@ program_button = 19
 ready_led = 16
 
 print GPIO.VERSION
+GPIO.cleanup()
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(heat_source_pin, GPIO.OUT)
 GPIO.setup(program_button, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
