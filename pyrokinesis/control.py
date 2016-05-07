@@ -46,7 +46,7 @@ class Control:
             self.flash_led(program_led, 1, 5)
 
         self.turn_led_on(ready_led)
-        #GPIO.add_event_detect(program_button, GPIO.RISING, callback=self.toggle_program, bouncetime=5000)
+        GPIO.add_event_detect(program_button, GPIO.RISING, callback=self.toggle_program, bouncetime=5000)
         scheduler.start()
         scheduler.add_job(self.track, 'interval', seconds=2)
         scheduler.add_job(self.control_power, 'interval', seconds=5)
@@ -68,7 +68,9 @@ class Control:
         db.shutdown()
 
     def turn_led_on(self, led):
+        GPIO.remove_event_detect(program_button)
         GPIO.output(led, 1)
+        GPIO.add_event_detect(program_button, GPIO.RISING, callback=self.toggle_program, bouncetime=5000)
 
     def turn_led_off(self, led):
         GPIO.output(led, 0)
