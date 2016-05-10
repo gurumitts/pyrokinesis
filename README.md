@@ -44,8 +44,8 @@ Pyrokinesis has 2 main coponents:
 7. smoothiecharts
 8. https://github.com/timofurrer/w1thermsensor
 
-#####Hardware schematic coming soon.
-In the meantime you can follow the water proof instructions located here:  https://learn.adafruit.com/adafruits-raspberry-pi-lesson-11-ds18b20-temperature-sensing/hardware
+#####Hardware schematics
+Available in docs:  https://github.com/gurumitts/pyrokinesis/tree/master/docs
 
 -
 ##Screenshots
