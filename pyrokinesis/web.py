@@ -1,14 +1,16 @@
 from flask import Flask
-from flask import render_template, request
+from flask import render_template, request, Response
 import math
 from data_store import DataStore
 import json
 import logging
+import os
 
 app = Flask(__name__)
 
-temp_range = 60
+temp_range = 30
 
+logs_location = '/var/log/pyro'
 
 @app.route('/')
 def index(name=None):
@@ -93,8 +95,23 @@ def enabled():
     return 'ok'
 
 
+@app.route('/logs/')
+def logs(log=None):
+    logs = []
+    if log is None:
+        for log in os.listdir(logs_location):
+            logs.append(log)
+    return render_template('logs.html', logs=logs)
+
+
+@app.route('/logs/<log>')
+def view_log(log=None):
+    fo = open('%s/%s' %(logs_location, log), 'r')
+    contents = fo.read()
+    return Response(contents, mimetype='text/plain')
+
 def start():
-    app.debug = True
+    # app.debug = True
     app.run(host='0.0.0.0')
 
 

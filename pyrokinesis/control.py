@@ -11,13 +11,14 @@ scheduler = BackgroundScheduler()
 heat_source_pin = 23
 
 program_led = 21
-program_button = 19
+program_button = 2
 ready_led = 16
 
 print GPIO.VERSION
+GPIO.cleanup()
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(heat_source_pin, GPIO.OUT)
-GPIO.setup(program_button, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(program_button, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(program_led, GPIO.OUT)
 GPIO.setup(ready_led, GPIO.OUT)
 
@@ -46,7 +47,7 @@ class Control:
             self.flash_led(program_led, 1, 5)
 
         self.turn_led_on(ready_led)
-        GPIO.add_event_detect(program_button, GPIO.RISING, callback=self.toggle_program, bouncetime=5000)
+        #GPIO.add_event_detect(program_button, GPIO.FALLING, callback=self.toggle_program, bouncetime=5000)
         scheduler.start()
         scheduler.add_job(self.track, 'interval', seconds=2)
         scheduler.add_job(self.control_power, 'interval', seconds=5)
@@ -55,7 +56,7 @@ class Control:
     def toggle_program(self, channel):
         db = get_db()
         enabled = db.get_enabled()
-        logging.getLogger('pyro').info('Program was: ', enabled)
+        logging.getLogger('pyro').info('Program was: %s' % enabled)
         if enabled == 'true':
             logging.getLogger('pyro').info('Program will be set to : false')
             db.set_enabled(False)
@@ -64,7 +65,7 @@ class Control:
             db.set_enabled(True)
             self.turn_led_on(program_led)
         enabled = db.get_enabled()
-        logging.getLogger('pyro').info('Program is: ', enabled)
+        logging.getLogger('pyro').info('Program is: %s' % enabled)
         db.shutdown()
 
     def turn_led_on(self, led):
@@ -81,7 +82,6 @@ class Control:
             self.turn_led_off(led)
             time.sleep(.5)
             count += 1
-
 
     def set_heat_source(self, switch):
         GPIO.output(heat_source_pin, switch)
@@ -146,9 +146,11 @@ class Control:
                 avg_temp = 1
             if enabled is 0:
                 self.heat_source_off()
+                self.turn_led_off(program_led)
                 db.set_heat_source_status('off')
                 logging.getLogger('pyro').debug('disabled turning off heat')
             else:
+                self.turn_led_on(program_led)
                 if temp > target_temp:
                     if temp < target_temp + tolerance and slope < 0:
                         self.burst_heat(heat_duration, cool_duration)
