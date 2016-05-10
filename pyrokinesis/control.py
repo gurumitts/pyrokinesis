@@ -11,14 +11,14 @@ scheduler = BackgroundScheduler()
 heat_source_pin = 23
 
 program_led = 21
-program_button = 19
+program_button = 2
 ready_led = 16
 
 print GPIO.VERSION
 GPIO.cleanup()
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(heat_source_pin, GPIO.OUT)
-GPIO.setup(program_button, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(program_button, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(program_led, GPIO.OUT)
 GPIO.setup(ready_led, GPIO.OUT)
 
@@ -47,7 +47,7 @@ class Control:
             self.flash_led(program_led, 1, 5)
 
         self.turn_led_on(ready_led)
-        # GPIO.add_event_detect(program_button, GPIO.RISING, callback=self.toggle_program, bouncetime=5000)
+        #GPIO.add_event_detect(program_button, GPIO.FALLING, callback=self.toggle_program, bouncetime=5000)
         scheduler.start()
         scheduler.add_job(self.track, 'interval', seconds=2)
         scheduler.add_job(self.control_power, 'interval', seconds=5)
